@@ -9,6 +9,7 @@ namespace FileSystemSnapshot
 {
     class Program
     {
+        static bool progressActive = false;
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -36,7 +37,7 @@ namespace FileSystemSnapshot
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\nFatal error: {ex.Message}");
+                ShowError($"\nFatal error: {ex.Message}");
             }
 
             Console.WriteLine("\nPress any key to exit...");
@@ -72,11 +73,11 @@ namespace FileSystemSnapshot
                     }
                     catch (UnauthorizedAccessException)
                     {
-                        Console.WriteLine($"No access to file: {file}");
+                        ShowError($"No access to file: {file}");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Processing error {file}: {ex.Message}");
+                        ShowError($"Processing error {file}: {ex.Message}");
                     }
                 }
             }
@@ -99,7 +100,7 @@ namespace FileSystemSnapshot
                 // Update progress every 100 files or 0.5 seconds
                 if (counter % 100 == 0 || (DateTime.Now - lastUpdate).TotalSeconds > 0.5)
                 {
-                    Console.Write($"\rFiles Found: {counter}");
+                    UpdateProgress(counter);
                     lastUpdate = DateTime.Now;
                 }
             }
@@ -128,7 +129,7 @@ namespace FileSystemSnapshot
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Console.WriteLine($"No access to folder: {currentDir}");
+                    ShowError($"No access to folder: {currentDir}");
                     files = Array.Empty<string>();
                 }
                 catch (DirectoryNotFoundException)
@@ -149,7 +150,7 @@ namespace FileSystemSnapshot
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Console.WriteLine($"No access to subfolders: {currentDir}");
+                    ShowError($"No access to subfolders: {currentDir}");
                     subDirs = Array.Empty<string>();
                 }
                 catch (DirectoryNotFoundException)
@@ -287,5 +288,38 @@ namespace FileSystemSnapshot
             // Resetting the cursor position if needed
             Console.SetCursorPosition(currentLeft, currentTop);
         }
+
+        // Update progress (scrolling line)
+        static void UpdateProgress(int counter)
+        {
+            Console.Write($"\rFiles Found: {counter}");
+            progressActive = true;
+        }
+
+        // Error message output
+        static void ShowError(string msg)
+        {
+            if (progressActive)
+            {
+                Console.WriteLine(); // Complete progress bar
+                progressActive = false;
+            }
+
+            // Keep current color
+            ConsoleColor originalColor = Console.ForegroundColor;
+
+            try
+            {
+                // Set to red
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(msg);
+            }
+            finally
+            {
+                // Restore original color
+                Console.ForegroundColor = originalColor;
+            }
+        }
+
     }
 }
